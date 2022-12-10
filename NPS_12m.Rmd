@@ -1,0 +1,81 @@
+---
+title: "EWSD2021_analysis_data"
+author: "JPT"
+date: "2022-12-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load dplyr package
+library(dplyr)
+```
+
+## Web Surveys
+
+Web-based surveys are self-administered electronic questionnaires accessible online on the internet. Participants can be invited to take part both online (e.g. through web ads on social media or online forums, or through mailing lists) and offline (e.g. at nightlife venues or events).
+
+In 2016, the EMCDDA started a pilot project --- the **European Web Survey on Drugs** --- to develop a system, and the capacity within EMCDDA, for collecting such data. The main added value of the European Web Survey on Drugs was to develop and test a web survey tool to collect information on the amounts of drugs used by different groups of people in several European countries as well as on purchases.
+
+```{r}
+#importing data
+    full_dataset <- read.csv("/Users/josepedroteixeira/NPS_Data/EWSD2021_analysis_data_2022-03-31.csv", header=TRUE, sep=";")
+    
+```
+
+## Creation of the subset of interest
+
+The subset of interest is that with participants that have answered "In the last 12 months (but not in the last 30 days)" or "In the last 30 days" to question Q0111 (New substances, that have sometimes similar effect as known illicit drugs, may now be sometimes available. They are sometimes called 'new psychoactive substances', 'legal highs' or 'research chemicals' and can come in different forms, for example -- herbal mixtures, powders, crystals, or tablets. When did you last use any of these substances?).
+
+```{r}
+# Creating the subset of participants that have reported consuming any NPS in the last 12 month users
+NPS_last12m_users <- subset(full_dataset, !(full_dataset$Q0111 %in% c("Never", "More than 12 months ago")))
+```
+
+```{r}
+# Creating a subset of participants that have reported consuming synthetic cathinones (e.g. mephedrone, MDPV, "alphas", methylone) in the last 12 months
+subset_Q0112_9 <- subset(full_dataset, !(full_dataset$Q0112_9 %in% c("Never", "More than 12 months ago", "")))
+```
+
+## Synthetic cathinones vs NPS reported consumption (last 12 months)
+
+To better grasp the understanding of synthetic cathinones as New Psychoactive Substances by participants, we looked for incongruences in answers to Q0111 (NPS-related) and Q0112_9 (Synthetic cathinones-related).
+
+```{r}
+# looking for differences between the reported consumption of synthetic cathinones in the last 12 months
+difference_cathinones_NPS <- setdiff(subset_Q0112_9, NPS_last12m_users)
+
+diffcathinones_participants_number <- nrow(difference_cathinones_NPS)
+```
+
+The number of participants that reported consumption of synthetic cathinones in the last 12 months (given by the answer to Q0112_9) but that did not report consumption of New Psychoactive Substances in the last 12 months (as answered in Q0111) is **`r diffcathinones_participants_number`**.
+
+## Synthetic cannabinoids vs NPS reported consumption (last 12 months)
+
+We also checked for incongruences between answers to Q0111 (NPS-related) and Q0112_10 (Synthetic cannabinoids-related).
+
+```{r}
+
+# Creating a subset of participants that have reported consuming synthetic cathinones (e.g. mephedrone, MDPV, "alphas", methylone) in the last 12 months
+subset_Q0112_10 <- subset(full_dataset, !(full_dataset$Q0112_10 %in% c("Never", "More than 12 months ago", "")))
+
+# looking for differences between the reported consumption of synthetic cathinones in the last 12 months
+difference_cannabinoids_NPS <- setdiff(subset_Q0112_10, NPS_last12m_users)
+
+diffcannabinoids_participants_number <- nrow(difference_cannabinoids_NPS)
+```
+
+The number of participants that reported consumption of synthetic cannabinoids in the last 12 months (given by the answer to Q0112_10) but that did not report consumption of New Psychoactive Substances in the last 12 months (as answered in Q0111) is **`r diffcannabinoids_participants_number`**.
+
+## Merging cathinones, cannabinoids and NPS
+
+Bearing in mind some incongruences between the answers to Q0111 and Q0112_9 and Q0112_10 and in order to attain a dataframe that encompasses all NPS users, some steps had to be taken.
+
+```{r}
+NPS_last12m_merged <- bind_rows(NPS_last12m_users, subset_Q0112_9, subset_Q0112_10) %>% distinct()
+
+NPS_last12m_numberusers <- nrow(NPS_last12m_merged)
+```
+
+The number of participants that reported consumption of **any** NPS is **`r NPS_last12m_numberusers`**.
